@@ -12,7 +12,16 @@ Output are two new files:
 	infile.fejl containing the lines that was not converted.	
 """
 import csv, sys, logging
-logging.basicConfig(filename='convert.log', level=logging.INFO, format='%(asctime)s:%(levelname)s:%(message)s')
+
+logger=logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
+formatter = logging.Formatter('%(asctime)s:%(levelname)s:%(name)s:%(message)s')	
+file_handler = logging.FileHandler('convert.log')
+file_handler.setFormatter(formatter)
+logger.addHandler(file_handler)
+			
+
+#logging.basicConfig(filename='convert.log', level=logging.INFO, format='%(asctime)s:%(levelname)s:%(name)s:%(message)s')
 
 def convert(infile, lookupfile):
 	with open(lookupfile) as csv_table:
@@ -41,7 +50,7 @@ def convert(infile, lookupfile):
 								accounterror=False
 							else:	
 								accounterror=True
-								logging.warning('Accounting string ' + i[3:] + ' could not be converted')
+								logger.warning('Accounting string ' + i[3:] + ' could not be converted')
 						else:
 							newList.append(i)
 					s='&'
@@ -76,7 +85,7 @@ def convert(infile, lookupfile):
 			for line in newlines:
 				newstring=newstring+line
 			newfile.write(newstring)
-			logging.info('Converted '+ str(len(newlines)) + ' lines.')
+			logger.info('Converted '+ str(len(newlines)) + ' lines.')
 			if len(errorlines)>0:
 				errorstring=""
 				with open(infile+".fejl","w") as errorfile:
@@ -87,7 +96,7 @@ def convert(infile, lookupfile):
 if __name__ == "__main__":
 	try:
 		convert(sys.argv[1],sys.argv[2])
-		logging.info("called from commandline")
+		logger.info("called from commandline")
 	except:
 		convert('Data.txt', 'lookup.csv')
-		logging.info("called from IDE")
+		logger.info("called from IDE")
