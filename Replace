@@ -1,0 +1,93 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""
+Created on Thu Jan 23 18:39:42 2020
+Author: Leif Lodahl
+
+Replace takes two parameters: 
+	infile is the datafile with accountings
+	looupfile is the translation table for account numbers as csv.
+Output are two new files: 
+	infile.converted containing the converted accountnumbers
+	infile.fejl containing the lines that was not converted.	
+"""
+import csv, sys, logging
+logging.basicConfig(filename='convert.log', level=logging.INFO, format='%(asctime)s:%(levelname)s:%(message)s')
+
+def convert(infile, lookupfile):
+	with open(lookupfile) as csv_table:
+		csv_reader = csv.reader(csv_table)
+		dataDict={}
+		for line in csv_reader:
+			dataDict[line[0]]=line[1]
+			
+	def getAccont(accountstring):
+		return dataDict.get(accountstring, None)
+	
+	with open(infile) as datafile:
+		with open(infile+'.converted',"w") as newfile:
+			lines=datafile.readlines()
+			newlines=[]
+			errorlines=[]
+			for line in lines:
+				if line[:6]=='000G69':
+					newList=[]
+					splitline= line.split('&')
+					for i in splitline:
+						if i[:3]=='111':
+							if getAccont(i[3:]) is not None:
+								i=i.replace(i[3:],getAccont(i[3:]))
+								newList.append(i)
+								accounterror=False
+							else:	
+								accounterror=True
+								logging.warning('Accounting string ' + i[3:] + ' could not be converted')
+						else:
+							newList.append(i)
+					s='&'
+					newString=s.join(newList)	
+					if accounterror==True:	
+						errorlines.append(line)
+					else:
+						newlines.append(newString)
+				elif line[:6]=='000G68':
+					if accounterror==False:
+						newList=[]
+						splitline= line.split('&')
+						for i in splitline:
+							if i[:2]=='12':
+								date=i[2:]
+							if i[:2]=='17':
+								i=i.replace(i[2:11],date)					
+							newList.append(i)
+							s='&'
+							newString=s.join(newList)
+						newlines.append(newString)
+					else:	
+						errorlines.append(line)
+						accounterror=False
+				elif line[:4]=='Z300':
+					newlines.append(line)
+				elif line[:4]=='SLUT':
+					newlines.append(line)	
+				else:
+					newlines.append(line)
+			newstring=""	
+			for line in newlines:
+				newstring=newstring+line
+			newfile.write(newstring)
+			logging.info('Converted '+ str(len(newlines)) + ' lines.')
+			if len(errorlines)>0:
+				errorstring=""
+				with open(infile+".fejl","w") as errorfile:
+					for line in errorlines:
+						errorstring=errorstring+line
+					errorfile.write(errorstring)
+
+if __name__ == "__main__":
+	try:
+		convert(sys.argv[1],sys.argv[2])
+		logging.info("called from commandline")
+	except:
+		convert('Data.txt', 'lookup.csv')
+		logging.info("called from IDE")
