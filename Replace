@@ -6,7 +6,7 @@ Author: Leif Lodahl
 
 Replace takes two parameters: 
 	infile is the datafile with accountings
-	looupfile is the translation table for account numbers as csv.
+	lookup file is the translation table for account numbers as csv.
 Output are two new files: 
 	infile.converted containing the converted accountnumbers
 	infile.fejl containing the lines that was not converted.	
